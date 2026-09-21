@@ -1,0 +1,312 @@
+<script type="text/javascript">
+    RED.nodes.registerType('openai-v1-compatible', {
+        category: 'ai processing',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'openai-v1-compatible-config', required: true },
+            model: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('modelType');
+                    return validator.call(this, v);
+                },
+            },
+            modelType: { value: 'str' },
+            instructions: { value: '' },
+            instructionsType: { value: 'str' },
+            input: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('inputType');
+                    return validator.call(this, v);
+                },
+            },
+            inputType: { value: 'msg' },
+            extraParameters: { value: '{}' },
+            extraParametersType: { value: 'json' },
+            output: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('outputType');
+                    return validator.call(this, v);
+                },
+            },
+            outputType: { value: 'msg' },
+            outputMode: { value: 'text', required: true },
+            maxCompletionTokens: {
+                value: '',
+                validate: function (v) {
+                    return v === '' || (Number.isSafeInteger(Number(v)) && Number(v) > 0);
+                },
+            },
+            temperature: {
+                value: '',
+                validate: function (v) {
+                    return (
+                        v === '' || (!Number.isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 2)
+                    );
+                },
+            },
+            includeRawResponse: { value: false },
+        },
+        oneditprepare: function () {
+            if (!this.output || typeof this.output !== 'string') this.output = 'payload';
+            if (!this.outputType || typeof this.outputType !== 'string') this.outputType = 'msg';
+            if (!this.extraParametersType || typeof this.extraParametersType !== 'string') {
+                this.extraParametersType = 'json';
+            }
+            if (this.extraParameters === undefined || this.extraParameters === null) {
+                this.extraParameters = '{}';
+            }
+
+            $('#node-input-model').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-modelType'),
+            });
+            $('#node-input-instructions').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-instructionsType'),
+            });
+            $('#node-input-input').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-inputType'),
+            });
+            $('#node-input-extraParameters').typedInput({
+                default: 'json',
+                types: ['json', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-extraParametersType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-comments-o',
+        label: function () {
+            return this.name || (this.model ? 'OpenAI V1: ' + this.model : 'openai v1');
+        },
+        paletteLabel: 'openai v1',
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="openai-v1-compatible">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Model</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Connection
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-model">
+                    <i class="fa fa-cube"></i>
+                    Model
+                </label>
+                <input type="text" id="node-input-model" placeholder="Model ID" />
+                <input type="hidden" id="node-input-modelType" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Prompt</legend>
+
+            <div class="form-row">
+                <label for="node-input-instructions">
+                    <i class="fa fa-list-alt"></i>
+                    Instructions
+                </label>
+                <input
+                    type="text"
+                    id="node-input-instructions"
+                    placeholder="Optional system instructions"
+                />
+                <input type="hidden" id="node-input-instructionsType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-input">
+                    <i class="fa fa-sign-in"></i>
+                    Input
+                </label>
+                <input type="text" id="node-input-input" />
+                <input type="hidden" id="node-input-inputType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-extraParameters">
+                    <i class="fa fa-sliders"></i>
+                    Extra Parameters
+                </label>
+                <input type="text" id="node-input-extraParameters" />
+                <input type="hidden" id="node-input-extraParametersType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-maxCompletionTokens">
+                    <i class="fa fa-sort-numeric-asc"></i>
+                    Max Tokens
+                </label>
+                <input
+                    type="number"
+                    id="node-input-maxCompletionTokens"
+                    min="1"
+                    step="1"
+                    placeholder="Model default"
+                />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-temperature">
+                    <i class="fa fa-thermometer-half"></i>
+                    Temperature
+                </label>
+                <input
+                    type="number"
+                    id="node-input-temperature"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    placeholder="Model default"
+                />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Output</legend>
+
+            <div class="form-row">
+                <label for="node-input-outputMode">
+                    <i class="fa fa-file-text-o"></i>
+                    Value
+                </label>
+                <select id="node-input-outputMode">
+                    <option value="text">Generated text</option>
+                    <option value="response">Complete response object</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-output">
+                    <i class="fa fa-sign-out"></i>
+                    Output To
+                </label>
+                <input type="text" id="node-input-output" />
+                <input type="hidden" id="node-input-outputType" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-includeRawResponse" />
+                <label for="node-input-includeRawResponse">
+                    Include raw response in msg.openaiV1.response
+                </label>
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="openai-v1-compatible">
+Calls a server implementing the OpenAI-style **Chat Completions** contract. The node is intentionally provider-agnostic and performs no provider-specific compatibility handling.
+
+Connection details are supplied by the selected **Connection** config node. The request is sent as:
+
+```text
+POST <Base URL>/chat/completions
+```
+
+### Properties
+
+- **Connection** _config_  
+  Shared endpoint, authentication, retry, timeout, and logging configuration.
+- **Model** _string | env | msg | flow | global | jsonata_  
+  Model ID sent in the `model` request field.
+- **Instructions** _optional typed value_  
+  Prepended as a `system` message.
+- **Input** _msg | flow | global | str | jsonata | env_  
+  Defaults to `msg.payload`. Text becomes one `user` message. Buffers are decoded as UTF-8. Objects are JSON-encoded into a user message. A Chat Completions message array is forwarded after basic structural validation.
+- **Extra Parameters** _json | msg | flow | global | jsonata_  
+  Optional object merged into the request. Use it for fields such as `top_p`, `response_format`, `tools`, `tool_choice`, `seed`, `max_tokens`, reasoning controls, or implementation-specific extensions. `model`, `messages`, and `stream` are controlled by this node. Explicit **Max Tokens** and **Temperature** values override the same fields in Extra Parameters.
+- **Max Tokens** _positive integer_  
+  Optional `max_completion_tokens` value. Leave blank to omit it.
+- **Temperature** _number_  
+  Optional value from 0 to 2. Leave blank to omit it.
+- **Value** _generated text | complete response_  
+  Text mode returns `choices[0].message.content`. Complete response mode returns the parsed JSON body.
+- **Output To** _msg | flow | global_  
+  Defaults to `msg.payload`. `msg.openaiV1` and its children are reserved for metadata.
+
+### Request behavior
+
+The node always sends `stream: false`. It does not execute tool calls or maintain conversation memory. Extra Parameters are forwarded without provider-specific validation.
+
+Core request shape:
+
+```json
+{
+  "model": "model-id",
+  "messages": [
+    { "role": "system", "content": "optional instructions" },
+    { "role": "user", "content": "prompt" }
+  ],
+  "stream": false
+}
+```
+
+### Output
+
+The incoming message is preserved except for the configured output destination and `msg.openaiV1`:
+
+```js
+msg.openaiV1 = {
+    id,
+    requestId,
+    model,
+    created,
+    finishReason,
+    usage,
+    outputText,
+    statusCode,
+    maxRetries,
+    retries,
+    timeoutMs
+};
+```
+
+When **Include raw response** is enabled, the complete response is also available as `msg.openaiV1.response`.
+
+Text mode reports an error when the first choice does not contain text. Use complete response mode when working with tool-call-only or other non-text completions. A `length` finish reason forwards the partial result and displays a truncation warning.
+
+### Compatibility contract
+
+This node only implements the OpenAI-style non-streaming `POST /chat/completions` request/response shape. Compatibility with a particular service, model, extension, authentication scheme, or interpretation of optional parameters is outside the node's contract.
+</script>
+<!-- @formatter:on -->

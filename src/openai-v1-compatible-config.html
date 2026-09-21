@@ -1,0 +1,199 @@
+<script type="text/javascript">
+    RED.nodes.registerType('openai-v1-compatible-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            baseUrl: {
+                value: 'https://api.openai.com/v1',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('baseUrlType');
+                    return validator.call(this, v);
+                },
+            },
+            baseUrlType: { value: 'str' },
+            apiKeySource: { value: 'credentials', required: true },
+            apiKeyEnv: {
+                value: 'OPENAI_API_KEY',
+                validate: function (v) {
+                    return (
+                        this.apiKeySource !== 'env' ||
+                        (typeof v === 'string' && v.trim().length > 0)
+                    );
+                },
+            },
+            maxRetries: {
+                value: 4,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 10;
+                },
+            },
+            timeoutMs: {
+                value: 120000,
+                required: true,
+                validate: function (v) {
+                    return (
+                        Number.isInteger(Number(v)) && Number(v) >= 1000 && Number(v) <= 2147483647
+                    );
+                },
+            },
+            enableLogging: { value: false },
+        },
+        credentials: { apiKey: { type: 'password' } },
+        label: function () {
+            return this.name || this.baseUrl || 'OpenAI Compatible';
+        },
+        oneditprepare: function () {
+            $('#node-config-input-baseUrl').typedInput({
+                default: 'str',
+                types: ['str', 'env'],
+                typeField: $('#node-config-input-baseUrlType'),
+            });
+
+            function updateApiKeySource() {
+                var source = $('#node-config-input-apiKeySource').val();
+                $('#openai-v1-api-key-credentials-row').toggle(source === 'credentials');
+                $('#openai-v1-api-key-env-row').toggle(source === 'env');
+            }
+
+            $('#node-config-input-apiKeySource')
+                .off('change.openaiV1')
+                .on('change.openaiV1', updateApiKeySource);
+            updateApiKeySource();
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="openai-v1-compatible-config">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-config-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-config-input-name" placeholder="OpenAI Compatible" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Connection</legend>
+
+            <div class="form-row">
+                <label for="node-config-input-baseUrl">
+                    <i class="fa fa-globe"></i>
+                    Base URL
+                </label>
+                <input
+                    type="text"
+                    id="node-config-input-baseUrl"
+                    placeholder="https://api.example.com/v1"
+                />
+                <input type="hidden" id="node-config-input-baseUrlType" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Authentication</legend>
+
+            <div class="form-row">
+                <label for="node-config-input-apiKeySource">
+                    <i class="fa fa-key"></i>
+                    API Key
+                </label>
+                <select id="node-config-input-apiKeySource">
+                    <option value="credentials">Stored credential</option>
+                    <option value="env">Environment variable</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+
+            <div class="form-row" id="openai-v1-api-key-credentials-row">
+                <label for="node-config-input-apiKey">
+                    <i class="fa fa-lock"></i>
+                    Credential
+                </label>
+                <input
+                    type="password"
+                    id="node-config-input-apiKey"
+                    autocomplete="new-password"
+                    placeholder="API key without Bearer prefix"
+                />
+            </div>
+
+            <div class="form-row" id="openai-v1-api-key-env-row">
+                <label for="node-config-input-apiKeyEnv">
+                    <i class="fa fa-terminal"></i>
+                    Variable
+                </label>
+                <input type="text" id="node-config-input-apiKeyEnv" placeholder="OPENAI_API_KEY" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Runtime</legend>
+
+            <div class="form-row">
+                <label for="node-config-input-maxRetries">
+                    <i class="fa fa-repeat"></i>
+                    Max Retries
+                </label>
+                <input type="number" id="node-config-input-maxRetries" min="0" max="10" step="1" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-config-input-timeoutMs">
+                    <i class="fa fa-clock-o"></i>
+                    Timeout (ms)
+                </label>
+                <input
+                    type="number"
+                    id="node-config-input-timeoutMs"
+                    min="1000"
+                    max="2147483647"
+                    step="1000"
+                />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-config-input-enableLogging" />
+                <label for="node-config-input-enableLogging">Enable request metadata logging</label>
+            </div>
+        </fieldset>
+
+        <div class="form-tips">
+            Select
+            <b>None</b>
+            for an endpoint that does not require bearer authentication, such as some local
+            OpenAI-compatible servers.
+        </div>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="openai-v1-compatible-config">
+Shared connection configuration for **OpenAI V1 Compatible** nodes.
+
+### Connection
+
+- **Base URL** _string | env_  
+  OpenAI-compatible API base URL, usually ending in `/v1`. The node appends `/chat/completions` unless the configured URL already ends with it.
+
+### Authentication
+
+- **Stored credential** stores the API key using Node-RED credentials. Enter only the key, without `Bearer`.
+- **Environment variable** resolves the configured environment variable for every request. The default is `OPENAI_API_KEY`.
+- **None** sends no `Authorization` header.
+
+### Runtime
+
+- **Max Retries** defaults to `4`; range `0` to `10`.
+- **Timeout (ms)** defaults to `120000` and applies to each HTTP attempt.
+- **Enable request metadata logging** logs retry/timeout metadata without logging the endpoint, model, prompt, or API key.
+
+Use one configuration node per endpoint/authentication combination and reuse it across multiple processing nodes/models.
+</script>
+<!-- @formatter:on -->

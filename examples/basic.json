@@ -1,0 +1,84 @@
+[
+    {
+        "id": "openai-v1-example-tab",
+        "type": "tab",
+        "label": "OpenAI V1 Compatible example",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "openai-v1-auth",
+        "type": "openai-v1-compatible-config",
+        "name": "OpenAI Connection",
+        "apiKeySource": "env",
+        "apiKeyEnv": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "baseUrlType": "str",
+        "maxRetries": 4,
+        "timeoutMs": 120000,
+        "enableLogging": false
+    },
+    {
+        "id": "openai-v1-inject",
+        "type": "inject",
+        "z": "openai-v1-example-tab",
+        "name": "Ask",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "payload": "Explain Node-RED in one sentence.",
+        "payloadType": "str",
+        "x": 180,
+        "y": 120,
+        "wires": [
+            [
+                "openai-v1-node"
+            ]
+        ]
+    },
+    {
+        "id": "openai-v1-node",
+        "type": "openai-v1-compatible",
+        "z": "openai-v1-example-tab",
+        "name": "OpenAI V1",
+        "config": "openai-v1-auth",
+        "model": "gpt-5.6-luna",
+        "modelType": "str",
+        "instructions": "Answer clearly and concisely.",
+        "instructionsType": "str",
+        "input": "payload",
+        "inputType": "msg",
+        "extraParameters": "{}",
+        "extraParametersType": "json",
+        "output": "payload",
+        "outputType": "msg",
+        "outputMode": "text",
+        "maxCompletionTokens": "",
+        "temperature": "",
+        "includeRawResponse": false,
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "openai-v1-debug"
+            ]
+        ]
+    },
+    {
+        "id": "openai-v1-debug",
+        "type": "debug",
+        "z": "openai-v1-example-tab",
+        "name": "Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 650,
+        "y": 120,
+        "wires": []
+    }
+]

@@ -1,17 +1,30 @@
 {
-  "name": "@faigle/node-red-contrib-_template_",
-  "version": "0.2.8",
-  "description": "Template/Example node for Node-Red",
+  "name": "@faigle/node-red-contrib-openai-v1-compatible",
+  "version": "0.1.1",
+  "description": "Provider-agnostic OpenAI V1 Chat Completions node for Node-RED",
   "keywords": [
-    "node-red"
+    "node-red",
+    "openai",
+    "openai-compatible",
+    "ai",
+    "llm",
+    "chat-completions"
   ],
   "private": false,
   "license": "MIT",
   "node-red": {
+    "version": ">=4.0.0",
     "nodes": {
-      "_template_": "src/_template_.js"
+      "openai-v1-compatible-config": "src/openai-v1-compatible-config.js",
+      "openai-v1-compatible": "src/openai-v1-compatible.js"
     }
   },
+  "files": [
+    "src",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@eslint/css": "^1.4.0",
     "@eslint/js": "^10.0.1",

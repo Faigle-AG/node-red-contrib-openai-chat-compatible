@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-openai-v1-compatible",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Provider-agnostic OpenAI V1 Chat Completions node for Node-RED",
   "keywords": [
     "node-red",
